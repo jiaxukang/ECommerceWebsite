@@ -1,26 +1,21 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from "./layout/header/header.component";
 import { HttpClient } from '@angular/common/http';
+import { Product } from './shared/model/product';
+import { Pagination } from './shared/model/pagination';
+import { ShopService } from './core/services/shop.service';
+import { ShopComponent } from "./features/shop/shop.component";
 
 @Component({
   selector: 'app-root',
-  imports: [ HeaderComponent],
+  standalone: true,
+  imports: [RouterOutlet, HeaderComponent, ShopComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App implements OnInit {
+export class App {
   
-  title = signal('Skinet');
-  baseUri = '/api/';
-  private http = inject(HttpClient);
-
-  ngOnInit(): void {
-    this.http.get(`${this.baseUri}products`)
-      .subscribe({
-        next: (response) => console.log('Fetched products:', response),
-        error: (err) => console.log('Failed to fetch products:', err),
-        complete: () => console.log('Fetch products request completed')
-      });
-  }
+  title = 'Skinet';
+  
 }

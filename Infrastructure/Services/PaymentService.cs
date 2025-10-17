@@ -9,8 +9,7 @@ namespace Infrastructure.Services;
 public class PaymentService(
     IConfiguration config,
     ICartService cartService,
-    IGenericRepository<DeliveryMethod> dmRepo,
-    IGenericRepository<Core.Entities.Product> productRepo
+    IUnitOfWork unitOfWork
 ) : IPaymentService
 {
 
@@ -25,14 +24,14 @@ public class PaymentService(
         var shippingPrice = 0m;
         if (basket.DeliveryMethodId.HasValue)
         {
-            var deliveryMethod = await dmRepo.GetByIdAsync(basket.DeliveryMethodId.Value);
+            var deliveryMethod = await unitOfWork.Repository<DeliveryMethod>().GetByIdAsync(basket.DeliveryMethodId.Value);
             if (deliveryMethod == null) return null;
             shippingPrice = deliveryMethod.Price;
         }
 
         foreach (var item in basket.Items)
         {
-            var product = await productRepo.GetByIdAsync(item.ProductId);
+            var product = await unitOfWork.Repository<Core.Entities.Product>().GetByIdAsync(item.ProductId);
             if (product == null) return null;
             if (item.Price != product.Price)
                 item.Price = product.Price;

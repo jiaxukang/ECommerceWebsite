@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers;
 
-public class ProductsController(IGenericRepository<Product> productRepository) : BaseController
+public class ProductsController(IUnitOfWork unitOfWork) : BaseController
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(
@@ -17,13 +17,13 @@ public class ProductsController(IGenericRepository<Product> productRepository) :
     {
         var spec = new ProductSpecification(paras);
 
-        return await CreatePageResult(productRepository, spec, paras.PageIndex, paras.PageSize);
+        return await CreatePageResult(unitOfWork.Repository<Product>(), spec, paras.PageIndex, paras.PageSize);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Product>> GetProduct(int id)
     {
-        var product = await productRepository.GetByIdAsync(id);
+        var product = await unitOfWork.Repository<Product>().GetByIdAsync(id);
         if (product == null)
         {
             return NotFound();
@@ -35,22 +35,22 @@ public class ProductsController(IGenericRepository<Product> productRepository) :
     public async Task<ActionResult<IReadOnlyList<string>>> GetBrands()
     {
         var spec = new BrandListSpecification();
-        return Ok(await productRepository.ListAsync(spec));
+        return Ok(await unitOfWork.Repository<Product>().ListAsync(spec));
     }
 
     [HttpGet("types")]
     public async Task<ActionResult<IReadOnlyList<string>>> GetTypes()
     {
         var spec = new TypeListSpecification();
-        return Ok(await productRepository.ListAsync(spec));
+        return Ok(await unitOfWork.Repository<Product>().ListAsync(spec));
     }
 
     [HttpPost]
     public async Task<ActionResult<Product>> CreateProduct(Product product)
     {
         Console.WriteLine("Creating product...");
-        productRepository.Add(product);
-        if (await productRepository.SaveAllAsync())
+        unitOfWork.Repository<Product>().Add(product);
+        if (await unitOfWork.Complete())
         {
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
         }
@@ -66,9 +66,9 @@ public class ProductsController(IGenericRepository<Product> productRepository) :
             return BadRequest();
         }
 
-        productRepository.Update(product);
+        unitOfWork.Repository<Product>().Update(product);
 
-        if (await productRepository.SaveAllAsync())
+        if (await unitOfWork.Complete())
         {
             return NoContent();
         }
@@ -79,14 +79,14 @@ public class ProductsController(IGenericRepository<Product> productRepository) :
     [HttpDelete("{id:int}")]
     public async Task<ActionResult> DeleteProduct(int id)
     {
-        var product = await productRepository.GetByIdAsync(id);
+        var product = await unitOfWork.Repository<Product>().GetByIdAsync(id);
         if (product == null)
         {
             return NotFound();
         }
 
-        productRepository.Delete(product);
-        if (await productRepository.SaveAllAsync())
+        unitOfWork.Repository<Product>().Delete(product);
+        if (await unitOfWork.Complete())
         {
             return NoContent();
         }
@@ -97,7 +97,7 @@ public class ProductsController(IGenericRepository<Product> productRepository) :
 
     private bool ProductExists(int id)
     {
-        return productRepository.EntityExists(id);
+        return unitOfWork.Repository<Product>().EntityExists(id);
     }
 
 }

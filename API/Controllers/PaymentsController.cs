@@ -8,7 +8,7 @@ namespace API.Controllers;
 
 public class PaymentsController(
     IPaymentService _paymentService,
-    IGenericRepository<DeliveryMethod> _deliveryMethodRepo
+    IUnitOfWork unitOfWork
 ) : BaseController
 {
     [Authorize]
@@ -23,7 +23,7 @@ public class PaymentsController(
     [HttpGet("deliveryMethods")]
     public async Task<ActionResult<IReadOnlyList<DeliveryMethod>>> GetDeliveryMethods()
     {
-        var methods = await _deliveryMethodRepo.ListAllAsync();
+        var methods = await unitOfWork.Repository<DeliveryMethod>().ListAllAsync();
         return Ok(methods);
     }
 }

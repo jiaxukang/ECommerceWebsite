@@ -1,11 +1,13 @@
 const PROXY_CONFIG = [
   {
     context: [
-      "/api/"
+      "/api/",
+      "/hub/"
     ],
     target: "https://localhost:5001",
     secure: false,
     changeOrigin: true,
+    ws: true,
     logLevel: "debug"
   }
 ];

@@ -5,6 +5,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, tap } from 'rxjs';
 
 import { User, Address } from '../../shared/model/user';
+import { SignalrService } from './signalr.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,7 @@ import { User, Address } from '../../shared/model/user';
 export class AccountService {
   baseUrl = environment.baseUrl;
   private http = inject(HttpClient);
-  //private signalrService = inject(SignalrService);
+  private signalrService = inject(SignalrService);
   currentUser = signal<User | null>(null);
   isAdmin = computed(() => {
     const roles = this.currentUser()?.roles;
@@ -24,7 +25,7 @@ export class AccountService {
     params = params.append('useCookies', true);
     return this.http.post<User>(this.baseUrl + 'login', values, { params }).pipe(
       tap(user => {
-        //if (user) this.signalrService.createHubConnection()
+        if (user) this.signalrService.createHubConnection()
       })
     )
   }
@@ -45,7 +46,7 @@ export class AccountService {
 
   logout() {
     return this.http.post(this.baseUrl + 'account/logout', {}).pipe(
-      //tap(() => this.signalrService.stopHubConnection())
+      tap(() => this.signalrService.stopHubConnection())
     )
   }
 

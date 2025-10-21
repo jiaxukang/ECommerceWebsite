@@ -17,6 +17,8 @@ import { CheckoutReviewComponent } from "./checkout-review/checkout-review.compo
 import { CurrencyPipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { MatProgressSpinner } from '@angular/material/progress-spinner';
+import { OrderToCreate, ShippingAddress } from '../../shared/model/order';
+import { OrderService } from '../../core/services/order.service';
 
 
 @Component({
@@ -39,6 +41,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   private snackService = inject(SnackbarService);
   private accountService = inject(AccountService);
   private snackbar = inject(SnackbarService);
+  private orderService = inject(OrderService);
   private router = inject(Router);
   cartService = inject(CartService);
   addressElement?: StripeAddressElement;
@@ -102,13 +105,18 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     try {
       if (this.confirmationToken) {
         const result = await this.stripeService.confirmPayment(this.confirmationToken);
-
+        
         if (result.paymentIntent?.status === 'succeeded') {
-         
+          const order = await this.createOrderModel();
+          const orderResult = await firstValueFrom(this.orderService.createOrder(order));
+          if (orderResult){
+            this.orderService.orderComplete=true;
             this.cartService.deleteCart();
             this.cartService.selectedDelivery.set(null);
             this.router.navigateByUrl('/checkout/success');
-         
+          }else {
+            throw new Error('Order creation failed');
+          }
         } else if (result.error) {
           throw new Error(result.error.message);
         } else {
@@ -126,7 +134,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   async onStepChange(event : StepperSelectionEvent){
     if (event.selectedIndex === 1){
       if (this.saveAddress){
-        const address: Address|null = await this.getAddressFromStripeAddress();
+        const address: Address|null = await this.getAddressFromStripeAddress() as Address;
         address && firstValueFrom(this.accountService.updateAddress(address));
       }
     }
@@ -140,7 +148,28 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   }
 
-  async getAddressFromStripeAddress(){
+  private async createOrderModel(): Promise<OrderToCreate> {
+    const cart = this.cartService.cart();
+    const shippingAddress = await this.getAddressFromStripeAddress() as ShippingAddress;
+    const card = this.confirmationToken?.payment_method_preview.card;
+
+    if (!cart?.id || !cart.deliveryMethodId || !card || !shippingAddress ){
+      throw new Error('Problem creating order');
+    }
+
+    return {
+      cartId: cart.id,
+      paymentSummary: {
+        last4: +card.last4,
+        brand: card.brand,
+        expMonth: card.exp_month,
+        expYear: card.exp_year
+      },
+      deliveryMethodId: cart.deliveryMethodId,
+      shippingAddress
+    }
+  }
+  async getAddressFromStripeAddress(): Promise<ShippingAddress | null | Address>{
     const result = await this.addressElement?.getValue();
     const address = result?.value.address;
 

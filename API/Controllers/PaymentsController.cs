@@ -10,36 +10,34 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Stripe;
 
-
 namespace API.Controllers;
 
-public class PaymentsController(
-    IPaymentService _paymentService,
-    IUnitOfWork unitOfWork,
+public class PaymentsController(IPaymentService paymentService,
+    IUnitOfWork unit,
+    IHubContext<NotificationHub> hubContext,
     ILogger<PaymentsController> logger,
-    IConfiguration config,
-    IHubContext<NotificationHub> hubContext
-) : BaseController
+    IConfiguration config) : BaseController
 {
     private readonly string _whSecret = config["StripeSettings:WhSecret"]!;
 
     [Authorize]
-    [HttpPost("{basketId}")]
-    public async Task<ActionResult<ShoppingCart>> CreateOrUpdatePaymentIntent(string basketId)
+    [HttpPost("{cartId}")]
+    public async Task<ActionResult> CreateOrUpdatePaymentIntent(string cartId)
     {
-        var result = await _paymentService.CreateOrUpdatePaymentIntent(basketId);
-        if (result == null) return BadRequest("Problem with payment intent");
-        return Ok(result);
+        var cart = await paymentService.CreateOrUpdatePaymentIntent(cartId);
+
+        if (cart == null) return BadRequest("Problem with your cart on the API");
+
+        return Ok(cart);
     }
 
     [HttpGet("deliveryMethods")]
     public async Task<ActionResult<IReadOnlyList<DeliveryMethod>>> GetDeliveryMethods()
     {
-        var methods = await unitOfWork.Repository<DeliveryMethod>().ListAllAsync();
-        return Ok(methods);
+        return Ok(await unit.Repository<DeliveryMethod>().ListAllAsync());
     }
 
-   [HttpPost("webhook")]
+    [HttpPost("webhook")]
     public async Task<IActionResult> StripeWebhook()
     {
         var json = await new StreamReader(Request.Body).ReadToEndAsync();
@@ -88,7 +86,7 @@ public class PaymentsController(
         {
             var spec = new OrderSpecification(intent.Id, true);
 
-            var order = await unitOfWork.Repository<Core.Entities.OrderAggregate.Order>().GetEntityWithSpecAsync(spec)
+            var order = await unit.Repository<Core.Entities.OrderAggregate.Order>().GetEntityWithSpecAsync(spec)
                         ?? throw new Exception("Order not found");
 
             var orderTotalInCents = (long)Math.Round(order.GetTotal() * 100,
@@ -103,7 +101,7 @@ public class PaymentsController(
                 order.Status = OrderStatus.PaymentReceived;
             }
 
-            await unitOfWork.Complete();
+            await unit.Complete();
 
             var connectionId = NotificationHub.GetConnectionIdByEmail(order.BuyerEmail);
 

@@ -4,7 +4,7 @@ const PROXY_CONFIG = [
       "/api/",
       "/hub/"
     ],
-    target: "https://localhost:5001",
+    target: "https://skinet-felix.azurewebsites.net/",
     secure: false,
     changeOrigin: true,
     ws: true,

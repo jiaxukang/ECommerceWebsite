@@ -1,1 +1,4 @@
-{}
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/966a50d3-733f-412b-b5d0-de2669baba89/resourceGroups/skinet/providers/Microsoft.Web/sites/skinet-felix",
+    "appService.deploySubpath": "API/bin/Publish"
+}

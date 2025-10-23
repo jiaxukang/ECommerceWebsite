@@ -6,6 +6,7 @@ using Infrastructure.Data;
 using Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 
@@ -35,6 +36,7 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddIdentityApiEndpoints<AppUser>()
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<StoreContext>();
 builder.Services.AddSignalR();
 
@@ -70,8 +72,9 @@ try
     {
         var services = scope.ServiceProvider;
         var context = services.GetRequiredService<StoreContext>();
+        var userManager = services.GetRequiredService<UserManager<AppUser>>();
         await context.Database.MigrateAsync();
-        await StoreSeedData.SeedAsync(context);
+        await StoreSeedData.SeedAsync(context, userManager);
     }
 }
 catch (Exception ex)

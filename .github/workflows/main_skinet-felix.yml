@@ -21,25 +21,16 @@ jobs:
       - name: Set up node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: client/package-lock.json
-
-      - name: Setup MSBuild (for native modules)
-        uses: microsoft/setup-msbuild@v2
+          node-version: '22.17.0'
 
       - name: Install Angular client
         run: npm install -g @angular/cli@20
-
-      - name: Clean install and build angular app
+      
+      - name: Install deps and build angular app
         run: |
           cd client
-          if (Test-Path node_modules) { Remove-Item -Recurse -Force node_modules }
-          npm ci --include=optional --legacy-peer-deps
+          npm install
           ng build
-        shell: pwsh
-        env:
-          npm_config_msvs_version: 2022
 
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4

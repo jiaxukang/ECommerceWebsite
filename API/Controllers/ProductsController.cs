@@ -4,6 +4,7 @@ using Core.Entities;
 using Core.Interfaces;
 using Core.Specification;
 using Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -45,6 +46,7 @@ public class ProductsController(IUnitOfWork unitOfWork) : BaseController
         return Ok(await unitOfWork.Repository<Product>().ListAsync(spec));
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<ActionResult<Product>> CreateProduct(Product product)
     {
@@ -58,6 +60,7 @@ public class ProductsController(IUnitOfWork unitOfWork) : BaseController
         return BadRequest("Failed to create product");
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpPut("{id:int}")]
     public async Task<ActionResult> UpdateProduct(int id, Product product)
     {
@@ -76,6 +79,7 @@ public class ProductsController(IUnitOfWork unitOfWork) : BaseController
         return BadRequest("Failed to update product");
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:int}")]
     public async Task<ActionResult> DeleteProduct(int id)
     {

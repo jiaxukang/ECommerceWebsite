@@ -1,5 +1,6 @@
 using System;
 using API.RequestHelper;
+using API.RequestHelpers;
 using Core.Entities;
 using Core.Interfaces;
 using Core.Specification;
@@ -12,6 +13,7 @@ namespace API.Controllers;
 
 public class ProductsController(IUnitOfWork unitOfWork) : BaseController
 {
+    [Cached(600)]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<Product>>> GetProducts(
         [FromQuery] SpecProductParas paras)
@@ -21,6 +23,7 @@ public class ProductsController(IUnitOfWork unitOfWork) : BaseController
         return await CreatePageResult(unitOfWork.Repository<Product>(), spec, paras.PageIndex, paras.PageSize);
     }
 
+    [Cached(600)]
     [HttpGet("{id:int}")]
     public async Task<ActionResult<Product>> GetProduct(int id)
     {
@@ -32,6 +35,7 @@ public class ProductsController(IUnitOfWork unitOfWork) : BaseController
         return product;
     }
 
+    [Cached(600)]
     [HttpGet("brands")]
     public async Task<ActionResult<IReadOnlyList<string>>> GetBrands()
     {
@@ -39,6 +43,7 @@ public class ProductsController(IUnitOfWork unitOfWork) : BaseController
         return Ok(await unitOfWork.Repository<Product>().ListAsync(spec));
     }
 
+    [Cached(600)]
     [HttpGet("types")]
     public async Task<ActionResult<IReadOnlyList<string>>> GetTypes()
     {
@@ -46,6 +51,7 @@ public class ProductsController(IUnitOfWork unitOfWork) : BaseController
         return Ok(await unitOfWork.Repository<Product>().ListAsync(spec));
     }
 
+    [InvalidateCache("api/products|")]
     [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<ActionResult<Product>> CreateProduct(Product product)
@@ -60,6 +66,7 @@ public class ProductsController(IUnitOfWork unitOfWork) : BaseController
         return BadRequest("Failed to create product");
     }
 
+    [InvalidateCache("api/products|")]
     [Authorize(Roles = "Admin")]
     [HttpPut("{id:int}")]
     public async Task<ActionResult> UpdateProduct(int id, Product product)
@@ -79,6 +86,7 @@ public class ProductsController(IUnitOfWork unitOfWork) : BaseController
         return BadRequest("Failed to update product");
     }
 
+    [InvalidateCache("api/products|")]
     [Authorize(Roles = "Admin")]
     [HttpDelete("{id:int}")]
     public async Task<ActionResult> DeleteProduct(int id)

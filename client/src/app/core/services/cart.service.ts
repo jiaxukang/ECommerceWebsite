@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { environment } from '../../../environments/environment';
-import { Cart, CartItem } from '../../shared/model/cart';
+import { Cart, CartItem, Coupon } from '../../shared/model/cart';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom, map, tap } from 'rxjs';
 import { Product } from '../../shared/model/product';
@@ -27,14 +27,14 @@ export class CartService {
 
     let discountValue = 0;
 
-    // if (cart.coupon) {
-    //   console.log(cart)
-    //   if (cart.coupon.amountOff) {
-    //     discountValue = cart.coupon.amountOff;
-    //   } else if (cart.coupon.percentOff) {
-    //     discountValue = subtotal * (cart.coupon.percentOff / 100);
-    //   }
-    // }
+    if (cart.coupon) {
+      console.log(cart)
+      if (cart.coupon.amountOff) {
+        discountValue = cart.coupon.amountOff;
+      } else if (cart.coupon.percentOff) {
+        discountValue = subtotal * (cart.coupon.percentOff / 100);
+      }
+    }
 
     const shipping = delivery ? delivery.price : 0;
 
@@ -132,5 +132,9 @@ export class CartService {
     const cart = new Cart();
     localStorage.setItem('cart_id', cart.id);
     return cart;
+  }
+
+  applyDiscount(code: string) {
+    return this.http.get<Coupon>(this.baseUrl + 'coupons/' + code);
   }
 }

@@ -18,6 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install build tools for native modules
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3
+
       - name: Set up node.js
         uses: actions/setup-node@v4
         with:
@@ -28,10 +33,26 @@ jobs:
       - name: Install Angular client
         run: npm install -g @angular/cli@20
 
-      - name: Install and build angular app
+      - name: Install dependencies
         run: |
           cd client
-          npm ci
+          npm install --include=optional
+
+      - name: Verify lightningcss installation
+        run: |
+          cd client
+          echo "Checking lightningcss installation..."
+          ls -la node_modules/lightningcss/ || echo "lightningcss not found"
+          find node_modules/lightningcss -name "*.node" || echo "No .node files found"
+
+      - name: Rebuild native modules
+        run: |
+          cd client
+          npm rebuild lightningcss --verbose || echo "Rebuild failed, continuing..."
+
+      - name: Build angular app
+        run: |
+          cd client
           ng build
 
       - name: Set up .NET Core
